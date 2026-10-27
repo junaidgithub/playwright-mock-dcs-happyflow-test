@@ -1,0 +1,69 @@
+const { test, expect } = require('@playwright/test');
+
+async function findBooking(page, pnr = 'DEMO123', surname = 'KHAN') {
+  await page.goto('/');
+  await page.getByTestId('pnr').fill(pnr);
+  await page.getByTestId('surname').fill(surname);
+  await page.getByTestId('lookup-button').click();
+}
+async function completeCheckin(page) {
+  await page.getByTestId('passenger-result').getByTestId('complete-checkin').click();
+}
+async function completePreBoarding(page, baggageKg = '20') {
+  await findBooking(page);
+  await completeCheckin(page);
+  await page.getByTestId('seat-12a').click();
+  await page.getByTestId('baggage-weight').fill(baggageKg);
+  await page.getByTestId('validate-baggage').click();
+}
+
+test('happy path: complete passenger journey through boarding', async ({ page }) => {
+  await completePreBoarding(page, '20');
+  await expect(page.getByTestId('baggage-message')).toContainText('Baggage validated');
+  await page.getByTestId('generate-boarding-pass').click();
+  await expect(page.getByTestId('boarding-pass')).toBeVisible();
+  await expect(page.getByText('Ayesha Khan')).toBeVisible();
+  await expect(page.getByTestId('boarding-pass')).toContainText('12A');
+  await page.getByTestId('board-passenger').click();
+  await expect(page.getByTestId('boarding-message')).toContainText('Boarding successful');
+  await expect(page.locator('#boarding-status')).toHaveText('BOARDED');
+});
+
+test('negative: unknown PNR is rejected', async ({ page }) => {
+  await findBooking(page, 'BAD999', 'KHAN');
+  await expect(page.getByTestId('message')).toContainText('Booking not found');
+  await expect(page.getByTestId('passenger-result')).toBeHidden();
+});
+
+test('negative: wrong surname is rejected', async ({ page }) => {
+  await findBooking(page, 'DEMO123', 'ALI');
+  await expect(page.getByTestId('message')).toContainText('Booking not found');
+});
+
+test('negative: occupied seat cannot be selected', async ({ page }) => {
+  await findBooking(page);
+  await completeCheckin(page);
+  await page.getByTestId('seat-12b').click();
+  await expect(page.getByTestId('seat-message')).toContainText('already occupied');
+});
+
+test('negative: baggage above 23 kg is rejected', async ({ page }) => {
+  await completePreBoarding(page, '30');
+  await expect(page.getByTestId('baggage-message')).toContainText('exceeds the 23 kg allowance');
+  await page.getByTestId('generate-boarding-pass').click();
+  await expect(page.getByTestId('pass-message')).toContainText('Validate baggage');
+});
+
+test('negative: boarding pass cannot be generated before prerequisites', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('generate-boarding-pass').click();
+  await expect(page.getByTestId('pass-message')).toContainText('Complete passenger check-in first');
+});
+
+test('negative: duplicate boarding attempt is rejected', async ({ page }) => {
+  await completePreBoarding(page);
+  await page.getByTestId('generate-boarding-pass').click();
+  await page.getByTestId('board-passenger').click();
+  await page.getByTestId('board-passenger').click();
+  await expect(page.getByTestId('boarding-message')).toContainText('Duplicate boarding rejected');
+});

@@ -1,0 +1,45 @@
+// Synthetic test data only. Mirrors the fictional booking hard-coded in public/app.js.
+module.exports = {
+  passenger: {
+    pnr: 'DEMO123',
+    surname: 'KHAN',
+    fullName: 'Ayesha Khan',
+    flight: 'SR 204',
+    route: 'KHI → DXB',
+  },
+  seats: {
+    available: ['12A', '12C', '14A'],
+    occupied: '12B',
+  },
+  baggage: {
+    allowanceKg: 23,
+    withinAllowance: '20',
+    atAllowance: '23',
+    justOverAllowance: '23.01',
+    overAllowance: '30',
+  },
+  invalidLookups: [
+    { title: 'unknown PNR', pnr: 'BAD999', surname: 'KHAN' },
+    { title: 'wrong surname', pnr: 'DEMO123', surname: 'ALI' },
+    { title: 'PNR with extra character', pnr: 'DEMO1234', surname: 'KHAN' },
+    { title: 'surname with special characters', pnr: 'DEMO123', surname: "KHAN'; --" },
+    { title: 'swapped PNR and surname', pnr: 'KHAN', surname: 'DEMO123' },
+    { title: 'whitespace-only PNR', pnr: '   ', surname: 'KHAN' },
+  ],
+  messages: {
+    bookingNotFound: 'Booking not found. Check the PNR and surname.',
+    checkinDone: 'Check-in completed successfully.',
+    checkinFirstSeat: 'Complete passenger check-in before selecting a seat.',
+    checkinFirst: 'Complete passenger check-in first.',
+    seatFirstBaggage: 'Select a seat before validating baggage.',
+    seatFirstPass: 'Select a seat before generating the boarding pass.',
+    baggageFirstPass: 'Validate baggage before generating the boarding pass.',
+    baggageExceeded: 'Baggage exceeds the 23 kg allowance. Excess baggage handling is required.',
+    baggageInvalid: 'Enter a valid non-negative baggage weight.',
+    passGenerated: 'Boarding pass generated successfully.',
+    readyForBoarding: 'Passenger is ready for boarding.',
+    passFirstBoarding: 'Generate a boarding pass before boarding.',
+    boarded: 'Boarding successful. Passenger status: BOARDED.',
+    duplicateBoarding: 'Duplicate boarding rejected: passenger is already boarded.',
+  },
+};

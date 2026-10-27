@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkyRoute | Mock Departure Control System</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar"><div class="brand-mark">SR</div><div><div class="brand">SkyRoute <span>OPS</span></div><div class="subtitle">Departure Control System · QA Sandbox</div></div><div class="sandbox">DEMO ENVIRONMENT</div></header>
+  <main class="shell">
+    <section class="intro"><div><p class="eyebrow">AIRPORT OPERATIONS / DEPARTURES</p><h1>Passenger journey</h1><p class="muted">Simulated airline workflow for QA training and automation demonstrations.</p></div><div class="flight-card"><div class="flight-label">FLIGHT</div><strong>SR 204</strong><div class="muted">KHI → DXB · 14:30</div></div></section>
+    <div class="notice"><strong>Training data only.</strong> This is a mock system, not a real airline DCS. Do not enter real passenger information.</div>
+    <nav class="steps" aria-label="Journey steps"><div class="step active" data-step="1"><b>1</b><span>Check-in</span></div><div class="step" data-step="2"><b>2</b><span>Seat</span></div><div class="step" data-step="3"><b>3</b><span>Baggage</span></div><div class="step" data-step="4"><b>4</b><span>Boarding pass</span></div><div class="step" data-step="5"><b>5</b><span>Boarding</span></div></nav>
+    <section class="panel">
+      <div class="panel-heading"><div><p class="eyebrow">STEP 01</p><h2>Passenger check-in</h2></div><span class="status" id="journey-status">NOT STARTED</span></div>
+      <form id="lookup-form" class="form-grid">
+        <label>Booking reference (PNR)<input id="pnr" data-testid="pnr" placeholder="e.g. DEMO123" value="DEMO123" autocomplete="off" required></label>
+        <label>Passenger surname<input id="surname" data-testid="surname" placeholder="e.g. KHAN" value="KHAN" autocomplete="off" required></label>
+        <div class="form-action"><button class="primary" type="submit" data-testid="lookup-button">Find booking</button></div>
+      </form>
+      <p class="helper">Demo booking: <strong>DEMO123 / KHAN</strong> · Flight SR 204 · Karachi to Dubai</p>
+      <div id="passenger-result" class="result hidden" data-testid="passenger-result" aria-live="polite"></div>
+      <div id="message" data-testid="message" class="message hidden" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" id="seat-panel">
+      <div class="panel-heading"><div><p class="eyebrow">STEP 02</p><h2>Seat selection</h2></div><span class="mini-status" id="seat-status">PENDING</span></div>
+      <p class="muted">Choose one seat. Seat 12B is intentionally occupied for negative testing.</p>
+      <div class="seat-layout" role="group" aria-label="Seat options">
+        <button class="seat" data-testid="seat-12a" data-seat="12A">12A</button><button class="seat occupied" data-testid="seat-12b" data-seat="12B" aria-label="Seat 12B occupied">12B <small>Occupied</small></button><button class="seat" data-testid="seat-12c" data-seat="12C">12C</button><button class="seat" data-testid="seat-14a" data-seat="14A">14A</button>
+      </div>
+      <p class="inline-message" id="seat-message" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" id="baggage-panel">
+      <div class="panel-heading"><div><p class="eyebrow">STEP 03</p><h2>Baggage</h2></div><span class="mini-status" id="baggage-status">PENDING</span></div>
+      <div class="form-grid baggage-grid"><label>Checked baggage (kg)<input id="baggage" data-testid="baggage-weight" type="number" min="0" max="100" value="20"></label><div class="allowance"><span>Included allowance</span><strong>23 kg</strong></div><div class="form-action"><button class="primary" id="validate-baggage" data-testid="validate-baggage" type="button">Validate baggage</button></div></div>
+      <p class="inline-message" id="baggage-message" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" id="boarding-pass-panel">
+      <div class="panel-heading"><div><p class="eyebrow">STEP 04</p><h2>Boarding pass</h2></div><span class="mini-status" id="pass-status">PENDING</span></div>
+      <p class="muted">Generate after check-in, seat selection and baggage validation are complete.</p>
+      <button class="primary" id="generate-pass" data-testid="generate-boarding-pass" type="button">Generate boarding pass</button>
+      <article id="boarding-pass" class="boarding-pass hidden" data-testid="boarding-pass">
+        <div class="pass-top"><div><span class="flight-label">BOARDING PASS</span><h3>SkyRoute <span class="pass-flight">SR 204</span></h3></div><div class="pass-code" id="pass-pnr">DEMO123</div></div>
+        <div class="route"><div><span class="flight-label">FROM</span><strong>KHI</strong><small>Karachi</small></div><div class="route-line">✈ ───────── ›</div><div><span class="flight-label">TO</span><strong>DXB</strong><small>Dubai</small></div></div>
+        <div class="pass-details"><div><span>PASSENGER</span><strong id="pass-name">Ayesha Khan</strong></div><div><span>SEAT</span><strong id="pass-seat">12A</strong></div><div><span>BAGGAGE</span><strong id="pass-baggage">20 kg</strong></div><div><span>BOARDING</span><strong>13:45</strong></div></div>
+        <div class="pass-footer">DEMO BOARDING PASS · NOT VALID FOR TRAVEL</div>
+      </article>
+      <p class="inline-message" id="pass-message" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" id="boarding-panel">
+      <div class="panel-heading"><div><p class="eyebrow">STEP 05</p><h2>Boarding gate</h2></div><span class="mini-status" id="boarding-status">PENDING</span></div>
+      <p class="muted">Boarding is available only after a boarding pass has been generated. Duplicate boarding must be rejected.</p>
+      <button class="primary" id="board-passenger" data-testid="board-passenger" type="button">Board passenger</button>
+      <p class="inline-message" id="boarding-message" aria-live="polite"></p>
+    </section>
+    <footer>SkyRoute QA Sandbox · Mock data · Built for Playwright end-to-end testing</footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

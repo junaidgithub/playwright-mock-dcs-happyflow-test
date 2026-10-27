@@ -1,0 +1,62 @@
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const state = { passenger: null, checkedIn: false, seat: null, baggageValidated: false, baggageKg: null, boardingPass: false, boarded: false };
+  const demoPassenger = { pnr: 'DEMO123', surname: 'KHAN', firstName: 'Ayesha', lastName: 'Khan', flight: 'SR 204', from: 'KHI', to: 'DXB' };
+  const occupiedSeats = ['12B'];
+  function message(id, text, kind = 'success-text') { const el = $(id); el.textContent = text; el.className = `inline-message ${kind}`; }
+  function mainMessage(text, kind = 'success-text') { const el = $('message'); el.textContent = text; el.className = `message ${kind}`; }
+  function setStatus(id, text, success = false) { const el = $(id); el.textContent = text; el.classList.toggle('success', success); }
+  function refreshSteps() {
+    const complete = [state.checkedIn, !!state.seat, state.baggageValidated, state.boardingPass, state.boarded];
+    document.querySelectorAll('.step').forEach((el, i) => { el.classList.toggle('done', complete[i]); el.classList.toggle('active', !complete[i] && (i === 0 || complete.slice(0, i).every(Boolean))); });
+    $('journey-status').textContent = state.boarded ? 'BOARDED' : state.checkedIn ? 'CHECKED IN' : 'NOT STARTED';
+    $('journey-status').classList.toggle('success', state.checkedIn);
+    setStatus('seat-status', state.seat ? `SEAT ${state.seat}` : 'PENDING', !!state.seat);
+    setStatus('baggage-status', state.baggageValidated ? 'VALIDATED' : 'PENDING', state.baggageValidated);
+    setStatus('pass-status', state.boardingPass ? 'GENERATED' : 'PENDING', state.boardingPass);
+    setStatus('boarding-status', state.boarded ? 'BOARDED' : 'PENDING', state.boarded);
+  }
+  $('lookup-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const pnr = $('pnr').value.trim().toUpperCase();
+    const surname = $('surname').value.trim().toUpperCase();
+    if (pnr !== demoPassenger.pnr || surname !== demoPassenger.surname) {
+      state.passenger = null; state.checkedIn = false;
+      $('passenger-result').classList.add('hidden'); mainMessage('Booking not found. Check the PNR and surname.', 'error'); refreshSteps(); return;
+    }
+    state.passenger = demoPassenger;
+    $('passenger-result').innerHTML = `<strong>Booking found:</strong> ${demoPassenger.firstName} ${demoPassenger.lastName} · ${demoPassenger.flight} · ${demoPassenger.from} → ${demoPassenger.to}<br><button class="primary" type="button" id="complete-checkin" data-testid="complete-checkin" style="margin-top:10px">Complete check-in</button>`;
+    $('passenger-result').classList.remove('hidden');
+    $('message').className = 'message hidden';
+    $('complete-checkin').addEventListener('click', () => { state.checkedIn = true; state.seat = null; state.baggageValidated = false; state.boardingPass = false; state.boarded = false; $('boarding-pass').classList.add('hidden'); message('seat-message', 'Select an available seat to continue.'); mainMessage('Check-in completed successfully.'); refreshSteps(); });
+  });
+  document.querySelectorAll('[data-seat]').forEach((button) => button.addEventListener('click', () => {
+    const seat = button.dataset.seat;
+    if (!state.checkedIn) return message('seat-message', 'Complete passenger check-in before selecting a seat.', 'error');
+    if (occupiedSeats.includes(seat)) return message('seat-message', `Seat ${seat} is already occupied. Choose another seat.`, 'error');
+    state.seat = seat; state.baggageValidated = false; state.boardingPass = false; state.boarded = false;
+    document.querySelectorAll('[data-seat]').forEach((b) => b.classList.toggle('selected', b.dataset.seat === seat));
+    $('boarding-pass').classList.add('hidden'); message('seat-message', `Seat ${seat} selected successfully.`); refreshSteps();
+  }));
+  $('validate-baggage').addEventListener('click', () => {
+    if (!state.checkedIn) return message('baggage-message', 'Complete passenger check-in first.', 'error');
+    if (!state.seat) return message('baggage-message', 'Select a seat before validating baggage.', 'error');
+    const weight = Number($('baggage').value);
+    if (!Number.isFinite(weight) || weight < 0) { state.baggageValidated = false; return message('baggage-message', 'Enter a valid non-negative baggage weight.', 'error'); }
+    if (weight > 23) { state.baggageValidated = false; state.boardingPass = false; $('boarding-pass').classList.add('hidden'); refreshSteps(); return message('baggage-message', 'Baggage exceeds the 23 kg allowance. Excess baggage handling is required.', 'error'); }
+    state.baggageKg = weight; state.baggageValidated = true; state.boardingPass = false; state.boarded = false; $('boarding-pass').classList.add('hidden'); message('baggage-message', `Baggage validated: ${weight} kg, within the 23 kg allowance.`); refreshSteps();
+  });
+  $('generate-pass').addEventListener('click', () => {
+    if (!state.checkedIn) return message('pass-message', 'Complete passenger check-in first.', 'error');
+    if (!state.seat) return message('pass-message', 'Select a seat before generating the boarding pass.', 'error');
+    if (!state.baggageValidated) return message('pass-message', 'Validate baggage before generating the boarding pass.', 'error');
+    $('pass-pnr').textContent = state.passenger.pnr; $('pass-name').textContent = `${state.passenger.firstName} ${state.passenger.lastName}`; $('pass-seat').textContent = state.seat; $('pass-baggage').textContent = `${state.baggageKg} kg`;
+    $('boarding-pass').classList.remove('hidden'); state.boardingPass = true; state.boarded = false; message('pass-message', 'Boarding pass generated successfully.'); message('boarding-message', 'Passenger is ready for boarding.'); refreshSteps();
+  });
+  $('board-passenger').addEventListener('click', () => {
+    if (!state.boardingPass) return message('boarding-message', 'Generate a boarding pass before boarding.', 'error');
+    if (state.boarded) return message('boarding-message', 'Duplicate boarding rejected: passenger is already boarded.', 'error');
+    state.boarded = true; message('boarding-message', 'Boarding successful. Passenger status: BOARDED.'); refreshSteps();
+  });
+  refreshSteps();
+})();
