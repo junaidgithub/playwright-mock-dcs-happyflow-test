@@ -18,8 +18,18 @@ const results = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const stripTags = (title) => title.replace(/\s*@\w+/g, '').trim();
 const fmt = (iso, opts) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Karachi', ...opts });
+// Times are always shown in PKT, even on GitHub's UTC runners.
+const fmtTime = (when) => fmt(when, { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+const fmtDuration = (ms) => {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s} sec` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, '0')} sec`;
+};
 const runDate = fmt(results.stats.startTime, { day: 'numeric', month: 'short', year: 'numeric' });
-const runTime = fmt(results.stats.startTime, { hour: '2-digit', minute: '2-digit' });
+const runTime = fmtTime(results.stats.startTime);
+const runEndTime = fmtTime(new Date(results.stats.startTime).getTime() + results.stats.duration);
+const runDuration = fmtDuration(results.stats.duration);
+const now = Date.now();
+const generatedAt = `${fmt(now, { day: 'numeric', month: 'short', year: 'numeric' })}, ${fmtTime(now)} PKT`;
 
 // Flatten results.json into [{ group, title, status, duration }].
 const tests = [];
@@ -109,6 +119,7 @@ const html = `<!DOCTYPE html>
   .header { background: linear-gradient(135deg,#5b2a86,#7a3fb0); color: #fff; padding: 32px 40px; }
   .header h1 { margin: 0 0 6px; font-size: 26px; }
   .header p { margin: 0; opacity: .9; font-size: 14px; }
+  .header p.run-meta { margin-top: 10px; font-size: 13px; opacity: .85; }
   .container { max-width: 1100px; margin: 0 auto; padding: 30px 40px 60px; }
   h2 { color: #5b2a86; border-bottom: 2px solid #e0d5ef; padding-bottom: 6px; margin-top: 40px; }
   h3 { color: #3d1f5c; margin: 28px 0 4px; }
@@ -156,7 +167,8 @@ const html = `<!DOCTYPE html>
 <body>
 <div class="header">
   <h1>${esc(data.project.title)}</h1>
-  <p>${esc(data.project.subtitle)} · ${runDate}</p>
+  <p>${esc(data.project.subtitle)}</p>
+  <p class="run-meta">Test run: ${runDate}, ${runTime} PKT · Duration: ${runDuration} · Report generated: ${generatedAt}</p>
 </div>
 <div class="container">
 
@@ -173,7 +185,10 @@ const html = `<!DOCTYPE html>
 <tr><td>Flight under test</td><td>${esc(data.project.flight)}</td></tr>
 <tr><td>Test data</td><td>${esc(data.project.testData)}</td></tr>
 <tr><td>Tool / approach</td><td>${esc(data.project.tool)} · Playwright ${esc(results.config.version)}</td></tr>
-<tr><td>Final run</td><td>${runDate}, ${runTime} PKT · ${Math.round(results.stats.duration / 1000)} s</td></tr>
+<tr><td>Test run started</td><td>${runDate}, ${runTime} PKT</td></tr>
+<tr><td>Test run finished</td><td>${runDate}, ${runEndTime} PKT</td></tr>
+<tr><td>Test execution time</td><td>${runDuration} (all ${total} tests)</td></tr>
+<tr><td>Report generated</td><td>${generatedAt}</td></tr>
 <tr><td>Final result</td><td>${verdict(failed === 0)} &nbsp;${passed} passed · ${failed} failed · ${results.stats.flaky} flaky</td></tr>
 </table>
 <div class="summary-box"><strong>Overall Assessment:</strong> ${assessment}</div>
@@ -212,7 +227,7 @@ ${historyRows}
 
 <div class="disclaimer"><strong>Note:</strong> This report covers a mock DCS training system. All passenger, flight and booking data is synthetic. No real airline systems, passenger records or travel documents were accessed or created. Code changes made for the fixes need technical and security review before deployment.</div>
 </div>
-<footer>Generated from Playwright results · SkyRoute DCS QA Sandbox · ${runDate}</footer>
+<footer>Generated from Playwright results · SkyRoute DCS QA Sandbox · ${generatedAt}</footer>
 </body>
 </html>`;
 

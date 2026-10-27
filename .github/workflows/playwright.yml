@@ -1,10 +1,7 @@
 name: DCS Playwright Tests
 
+# Manual only: Actions tab → DCS Playwright Tests → Run workflow.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:

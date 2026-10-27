@@ -52,7 +52,7 @@ npm run report:client
 ## Run on GitHub (GitHub Actions)
 `.github/workflows/playwright.yml` runs the suite on GitHub's own Ubuntu machine. The mock website is part of this repo, so the runner starts it on its own `127.0.0.1:3000`; no local computer is needed.
 
-- Triggers: every push and pull request to `main`, plus a manual **Run workflow** button in the **Actions** tab.
+- Trigger: manual only. Go to **Actions → DCS Playwright Tests → Run workflow**. Pushes and pull requests do not start a run.
 - Steps: install Node 24 → `npm ci` → install Chromium → `npx playwright test` → `npm run report:client`.
 - Results: a green tick or red cross on the run, with downloadable **Artifacts**: `playwright-report`, `client-report`, and `test-results` (traces and screenshots, failures only). Artifacts are kept for 14 days.
 - Email: GitHub's own notifications email a link to the run when it **fails** (no report attachment); passing runs send no email. Setting: GitHub profile → **Settings → Notifications → System → Actions**, tick **Email** and keep **Only notify for failed workflows** ticked.
